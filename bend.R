@@ -2000,7 +2000,7 @@ sum(is.na(joined_dataset_final$acousticness))
 #exportujemo kao csv fajl
 #write.csv(df, file = "putanja/do/fajla.csv", row.names = FALSE)
 
-write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
+#write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
 
 #install.packages("spotifyr")
 library(spotifyr)
@@ -2091,5 +2091,93 @@ for (i in 1:length(all_audio_features_df$Track)) {
   joined_dataset_final[indeks,]$valence <- all_audio_features_df[i,]$valence
   joined_dataset_final[indeks,]$duration_ms <- all_audio_features_df[i,]$duration_ms
 }
+#sum(is.na(joined_dataset_final$acousticness))
 
-sum
+
+#fale <- subset(joined_dataset_final,is.na(joined_dataset_final$acousticness))
+
+#print(fale[fale$`Album name` == "12 X 5",1])
+#print(unique(fale$`Album name`))
+
+#druga spotify playlista
+playlist_url2 <- "https://open.spotify.com/playlist/30KEBso4y7A8gZaZzccfes"
+
+# Izdvajanje ID playliste iz URL-a
+playlist_id2 <- sub("^.+/([[:alnum:]]+)$", "\\1", playlist_url2)
+
+all_tracks2 <- NULL
+offset <- 0
+limit <- 50
+
+#library(dplyr)
+
+repeat {
+  # Dohvati trenutnu stranicu numera
+  tracks <- get_playlist_tracks(playlist_id2, limit = limit, offset = offset)
+  
+  # Ako nema više numera, prekini petlju
+  if (length(tracks) == 0) {
+    break
+  }
+  
+  # Pretvori stranicu numera u data frame i dodaj je u all_tracks
+  tracks_df2 <- as.data.frame(tracks)
+  all_tracks2 <- bind_rows(all_tracks2, tracks_df2)
+  
+  
+  # Pomeri offset za sledeću stranicu
+  offset <- offset + limit
+}
+
+track_ids2 <- all_tracks2$track.id
+#track_name <- all_tracks$track.name
+
+
+# Lista za čuvanje rezultata
+all_audio_features2 <- list()
+
+# Iteriranje kroz svaki track ID
+for (track_id in track_ids2) {
+  # Dohvatanje audio feature-a za trenutni track ID
+  audio_feature2 <- get_track_audio_features(track_id)
+  
+  # Dohvatanje imena pesme za trenutni track ID
+  track <- get_track(track_id)
+  track_name <- track$name
+  
+  # Dodavanje audio feature-a i imena pesme u listu
+  audio_feature$Track_ID <- track_id
+  audio_feature$Track <- track_name
+  all_audio_features2[[track_id]] <- audio_feature
+}
+
+# Pretvaranje liste u data frame
+all_audio_features_df2 <- do.call(rbind, all_audio_features2)
+# Ukloni sve pre "- " i sam "- " iz vrednosti u koloni "Track"
+all_audio_features_df2$Track <- sub(" -.*", "", all_audio_features_df2$Track)
+all_audio_features_df2$Track <- trimws(all_audio_features_df2$Track)
+all_audio_features_df2$Track <- str_to_upper(all_audio_features_df2$Track)
+
+
+pesme <- all_audio_features_df2$Track
+
+#update dataset
+for (i in 1:length(all_audio_features_df2$Track)) {
+  indeks <- which(joined_dataset_final$Title == pesme[i])
+  print(indeks)
+  joined_dataset_final[indeks,]$acousticness <- all_audio_features_df2[i,]$acousticness
+  joined_dataset_final[indeks,]$danceability <- all_audio_features_df2[i,]$danceability
+  joined_dataset_final[indeks,]$energy <- all_audio_features_df2[i,]$energy
+  joined_dataset_final[indeks,]$instrumentalness <- all_audio_features_df2[i,]$instrumentalness
+  joined_dataset_final[indeks,]$liveness <- all_audio_features_df2[i,]$liveness
+  joined_dataset_final[indeks,]$loudness <- all_audio_features_df2[i,]$loudness
+  joined_dataset_final[indeks,]$speechiness <- all_audio_features_df2[i,]$speechiness
+  joined_dataset_final[indeks,]$tempo <- all_audio_features_df2[i,]$tempo
+  joined_dataset_final[indeks,]$valence <- all_audio_features_df2[i,]$valence
+  joined_dataset_final[indeks,]$duration_ms <- all_audio_features_df2[i,]$duration_ms
+}
+
+fale <- subset(joined_dataset_final,is.na(joined_dataset_final$acousticness))
+
+
+write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
