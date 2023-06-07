@@ -2196,8 +2196,6 @@ joined_dataset_final$`British charts` <- as.factor(joined_dataset_final$`British
 joined_dataset_final <- joined_dataset_final %>%
   relocate(`British charts`, .before = Date)
 
-joined_dataset_final[is.na(joined_dataset_final$acousticness),1]
-
 names(joined_dataset_final) <- sub("\\[.*\\]", "", names(joined_dataset_final))
 joined_dataset_final$duration_ms <- NULL
 
