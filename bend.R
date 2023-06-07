@@ -1837,7 +1837,7 @@ table <- table[table$`Album name` != "bootleg recording/outtake", ]
 table <- table[table$`Album name` != "Metamorphosis", ]
 
 #ucitavanje csv fajla sa Kaggle-a
-kaggle <- read.csv("../rolling_stones_spotify.csv")
+kaggle <- read.csv("rolling_stones_spotify.csv")
 kaggle$name <- gsub("-.*","",kaggle$name)
 kaggle$name <- gsub("/.*","",kaggle$name)
 
