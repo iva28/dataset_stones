@@ -1740,6 +1740,8 @@ for (i in 1:length(all_albums_records)) {
 #obrisi red sa Totally Stripped imenom albuma
 table <- table[table$`Album name` != "Totally Stripped", ]
 
+table <- table[!is.na(table$`Record Label`),]
+
 # izdvoji tabelu "Studio albums"
 url_wiki_albums <- "https://en.wikipedia.org/wiki/The_Rolling_Stones_discography#Albums"
 page_wiki_albums <- read_html(url_wiki_albums)
@@ -1748,9 +1750,11 @@ studio_albums_table <- page_wiki_albums %>% html_nodes("h3:contains('Studio albu
 #brisemo (UK) i (US) zagrade
 studio_albums_table$Title <- gsub("\\s*\\(.*", "", studio_albums_table$Title)
 studio_albums_table <- studio_albums_table[-c(1,nrow(studio_albums_table)),]
+studio_albums_table[6,]$Title <- "December's Children (And Everybody's)"
+studio_albums_table[19,]$Title <- "It's Only Rock 'n' Roll"
 studio_albums_table$Title <- trimws(studio_albums_table$Title)
 
-studio_albums_table[6,]$Title <- "December's Children (And Everybody's)"
+
 
 #studio_albums_table[6,]$Title <- "Between the Buttons"
 studio_albums <- studio_albums_table$Title
@@ -1771,10 +1775,14 @@ for (i in 1:length(live_albums)) {
   indeks <- which(tolower(gsub("\\s+", "", table$`Album name`))== tolower(gsub("\\s+", "", live_albums[i])))
   table[indeks,]$`Album type`<- "Live"
 }
+# izdvoji tabelu "Compilation"
 
 compilation_albums_table <- page_wiki_albums %>% html_nodes("h3:contains('Compilation albums') + table.wikitable") %>% html_table(fill = TRUE) %>% .[[1]]
 compilation_albums_table <- compilation_albums_table[-1,]
 compilation_albums_table$Title <- trimws(compilation_albums_table$Title)
+
+#brisemo (UK) i (US) zagrade
+compilation_albums_table$Title <- gsub("\\s*\\(.*", "", compilation_albums_table$Title)
 
 compilation_albums <- compilation_albums_table$Title
 for (i in 1:length(compilation_albums)) {
@@ -1783,10 +1791,9 @@ for (i in 1:length(compilation_albums)) {
 }
 
 table$`Album name` <- trimws(table$`Album name`)
-table$`Album type` <- ifelse(table$`Album name` == "bootleg recording/outtake","/",table$`Album type`)
-table$`Record Label` <- ifelse(table$`Album name` == "bootleg recording/outtake","/",table$`Record Label`)
-table$`Song duration` <- ifelse(table$`Album name` == "bootleg recording/outtake","/",table$`Song duration`)
-table$`Track number` <- ifelse(table$`Album name` == "bootleg recording/outtake","/",table$`Track number`)
+#brisemo te redove
+table <- table[table$`Album name` != "bootleg recording/outtake", ]
+table <- table[table$`Album name` != "Metamorphosis", ]
 
 #ucitavanje csv fajla sa Kaggle-a
 kaggle <- read.csv("../rolling_stones_spotify.csv")
@@ -1807,19 +1814,9 @@ kaggle_summary <- kaggle %>%
   summarise_at(vars(-group_cols()), mean)
 
 
-#kaggle_summary2 <- kaggle %>%
- # group_by(trimws(Title)) %>%
-  #mutate(across(!c(Title), mean)) %>%
-  #distinct(Title, .keep_all = TRUE)
-#df_transformed <- df_transformed %>% distinct(.keep_all = T)
-
 library(stringr)
 joined_dataset <- left_join(table, kaggle_summary, by = c("Title" = "Title")) %>%
   mutate(Title = str_to_lower(Title))
-
-
-#joined_dataset <- left_join(table, kaggle_summary2, by = c("Title" = "Title")) %>%
-# mutate(Title = str_to_lower(Title))
 
 
 joined_dataset$Title <- str_to_upper(joined_dataset$Title)
@@ -1848,7 +1845,7 @@ for (i in 1:length(pesme)) {
   joined_dataset[indeks,]$speechiness <- na_rows[i,]$speechiness
   joined_dataset[indeks,]$tempo <- na_rows[i,]$tempo
   joined_dataset[indeks,]$valence <- na_rows[i,]$valence
-  joined_dataset[indeks,]$popularity <- na_rows[i,]$popularity
+  #joined_dataset[indeks,]$popularity <- na_rows[i,]$popularity
   joined_dataset[indeks,]$duration_ms <- na_rows[i,]$duration_ms
 }
 
@@ -1865,7 +1862,6 @@ df_peak <- as.data.frame(table_peak[[1]])
 df_peak <- df_peak[,-c(6,7)]
 
 
-#remove(table_peak)
 # Prikazujemo prvih nekoliko redova tabele
 head(table_peak)
 #sredjujemo kolonu Title
@@ -1951,56 +1947,47 @@ joined_dataset_final <- joined_dataset_final %>%
   ) %>%
   select(-ends_with(".x"), -ends_with(".y"))
 
-
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(Certification = ifelse(is.na(Certification), "__", Certification))
+  mutate(Certification = ifelse(is.na(Certification) | Certification == "", "—", Certification))
 
 joined_dataset_final <- joined_dataset_final %>%
   select(-"Release date")
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`US Cash` = ifelse(is.na(`US Cash`), "__", `US Cash`))
+  mutate(`US Cash` = ifelse(is.na(`US Cash`), "—", `US Cash`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`US Rec World` = ifelse(is.na(`US Rec World`), "__", `US Rec World`))
+  mutate(`US Rec World` = ifelse(is.na(`US Rec World`) | `US Rec World` == "","—", `US Rec World`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`AUS[7][61]` = ifelse(is.na(`AUS[7][61]`), "__", `AUS[7][61]`))
+  mutate(`AUS[7][61]` = ifelse(is.na(`AUS[7][61]`), "—", `AUS[7][61]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`UK[5]` = ifelse(is.na(`UK[5]`), "__", `UK[5]`))
+  mutate(`UK[5]` = ifelse(is.na(`UK[5]`), "—", `UK[5]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`GER[10]` = ifelse(is.na(`GER[10]`), "__", `GER[10]`))
+  mutate(`GER[10]` = ifelse(is.na(`GER[10]`), "—", `GER[10]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`NLD[12]` = ifelse(is.na(`NLD[12]`), "__", `NLD[12]`))
+  mutate(`NLD[12]` = ifelse(is.na(`NLD[12]`), "—", `NLD[12]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(FRA = ifelse(is.na(FRA), "__", FRA))
+  mutate(FRA = ifelse(is.na(FRA), "—", FRA))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`SWI[59]` = ifelse(is.na(`SWI[59]`), "__", `SWI[59]`))
+  mutate(`SWI[59]` = ifelse(is.na(`SWI[59]`), "—", `SWI[59]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(POL = ifelse(is.na(POL), "__", POL))
+  mutate(POL = ifelse(is.na(POL), "—", POL))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(`US[6]` = ifelse(is.na(`US[6]`), "__", `US[6]`))
+  mutate(`US[6]` = ifelse(is.na(`US[6]`), "—", `US[6]`))
 
 joined_dataset_final <- joined_dataset_final %>%
-  mutate(CAN = ifelse(is.na(CAN), "__", CAN))
+  mutate(CAN = ifelse(is.na(CAN) | CAN == "", "—", CAN))
 
 joined_dataset_final <- joined_dataset_final %>%
   select(-"Certification", "Certification")
-
-
-sum(is.na(joined_dataset_final$acousticness))
-
-#exportujemo kao csv fajl
-#write.csv(df, file = "putanja/do/fajla.csv", row.names = FALSE)
-
-#write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
 
 #install.packages("spotifyr")
 library(spotifyr)
@@ -2022,7 +2009,6 @@ offset <- 0
 limit <- 50
 
 #library(dplyr)
-
 repeat {
   # Dohvati trenutnu stranicu numera
   tracks <- get_playlist_tracks(playlist_id, limit = limit, offset = offset)
@@ -2031,20 +2017,14 @@ repeat {
   if (length(tracks) == 0) {
     break
   }
-  
   # Pretvori stranicu numera u data frame i dodaj je u all_tracks
   tracks_df <- as.data.frame(tracks)
   all_tracks <- bind_rows(all_tracks, tracks_df)
-  
-  
   # Pomeri offset za sledeću stranicu
   offset <- offset + limit
 }
-
 track_ids <- all_tracks$track.id
 #track_name <- all_tracks$track.name
-
-
 # Lista za čuvanje rezultata
 all_audio_features <- list()
 
@@ -2066,20 +2046,19 @@ for (track_id in track_ids) {
 # Pretvaranje liste u data frame
 all_audio_features_df <- do.call(rbind, all_audio_features)
 
-
 row_nums <- seq_len(nrow(all_audio_features_df))
 all_audio_features_df$Row <- row_nums
 
-
-all_audio_features_df$Track <- trimws(all_audio_features_df$Track)
 all_audio_features_df$Track <- str_to_upper(all_audio_features_df$Track)
+all_audio_features_df$Track <- sub(" -.*", "", all_audio_features_df$Track)
+all_audio_features_df$Track <- trimws(all_audio_features_df$Track)
+
+joined_dataset_final$Title <- gsub("\\(LIVE\\)", "", joined_dataset_final$Title)
 
 pesme <- all_audio_features_df$Track
-
 #update dataset
 for (i in 1:length(all_audio_features_df$Track)) {
-  indeks <- which(joined_dataset_final$Title == pesme[i])
-  print(indeks)
+  indeks <- which(trimws(joined_dataset_final$Title) == pesme[i])
   joined_dataset_final[indeks,]$acousticness <- all_audio_features_df[i,]$acousticness
   joined_dataset_final[indeks,]$danceability <- all_audio_features_df[i,]$danceability
   joined_dataset_final[indeks,]$energy <- all_audio_features_df[i,]$energy
@@ -2091,29 +2070,21 @@ for (i in 1:length(all_audio_features_df$Track)) {
   joined_dataset_final[indeks,]$valence <- all_audio_features_df[i,]$valence
   joined_dataset_final[indeks,]$duration_ms <- all_audio_features_df[i,]$duration_ms
 }
-#sum(is.na(joined_dataset_final$acousticness))
 
-
-#fale <- subset(joined_dataset_final,is.na(joined_dataset_final$acousticness))
-
-#print(fale[fale$`Album name` == "12 X 5",1])
-#print(unique(fale$`Album name`))
 
 #druga spotify playlista
 playlist_url2 <- "https://open.spotify.com/playlist/30KEBso4y7A8gZaZzccfes"
 
 # Izdvajanje ID playliste iz URL-a
-playlist_id2 <- sub("^.+/([[:alnum:]]+)$", "\\1", playlist_url2)
+playlist_id <- sub("^.+/([[:alnum:]]+)$", "\\1", playlist_url2)
 
-all_tracks2 <- NULL
+all_tracks <- NULL
 offset <- 0
 limit <- 50
 
-#library(dplyr)
-
 repeat {
   # Dohvati trenutnu stranicu numera
-  tracks <- get_playlist_tracks(playlist_id2, limit = limit, offset = offset)
+  tracks <- get_playlist_tracks(playlist_id, limit = limit, offset = offset)
   
   # Ako nema više numera, prekini petlju
   if (length(tracks) == 0) {
@@ -2121,25 +2092,23 @@ repeat {
   }
   
   # Pretvori stranicu numera u data frame i dodaj je u all_tracks
-  tracks_df2 <- as.data.frame(tracks)
-  all_tracks2 <- bind_rows(all_tracks2, tracks_df2)
-  
+  tracks_df <- as.data.frame(tracks)
+  all_tracks <- bind_rows(all_tracks, tracks_df)
   
   # Pomeri offset za sledeću stranicu
   offset <- offset + limit
 }
 
-track_ids2 <- all_tracks2$track.id
+track_ids <- all_tracks$track.id
 #track_name <- all_tracks$track.name
 
-
 # Lista za čuvanje rezultata
-all_audio_features2 <- list()
+all_audio_features <- list()
 
 # Iteriranje kroz svaki track ID
-for (track_id in track_ids2) {
+for (track_id in track_ids) {
   # Dohvatanje audio feature-a za trenutni track ID
-  audio_feature2 <- get_track_audio_features(track_id)
+  audio_feature <- get_track_audio_features(track_id)
   
   # Dohvatanje imena pesme za trenutni track ID
   track <- get_track(track_id)
@@ -2148,23 +2117,22 @@ for (track_id in track_ids2) {
   # Dodavanje audio feature-a i imena pesme u listu
   audio_feature$Track_ID <- track_id
   audio_feature$Track <- track_name
-  all_audio_features2[[track_id]] <- audio_feature
+  all_audio_features[[track_id]] <- audio_feature
 }
 
 # Pretvaranje liste u data frame
-all_audio_features_df2 <- do.call(rbind, all_audio_features2)
+all_audio_features_df2 <- do.call(rbind, all_audio_features)
+
 # Ukloni sve pre "- " i sam "- " iz vrednosti u koloni "Track"
 all_audio_features_df2$Track <- sub(" -.*", "", all_audio_features_df2$Track)
 all_audio_features_df2$Track <- trimws(all_audio_features_df2$Track)
 all_audio_features_df2$Track <- str_to_upper(all_audio_features_df2$Track)
-
 
 pesme <- all_audio_features_df2$Track
 
 #update dataset
 for (i in 1:length(all_audio_features_df2$Track)) {
   indeks <- which(joined_dataset_final$Title == pesme[i])
-  print(indeks)
   joined_dataset_final[indeks,]$acousticness <- all_audio_features_df2[i,]$acousticness
   joined_dataset_final[indeks,]$danceability <- all_audio_features_df2[i,]$danceability
   joined_dataset_final[indeks,]$energy <- all_audio_features_df2[i,]$energy
@@ -2177,7 +2145,18 @@ for (i in 1:length(all_audio_features_df2$Track)) {
   joined_dataset_final[indeks,]$duration_ms <- all_audio_features_df2[i,]$duration_ms
 }
 
-fale <- subset(joined_dataset_final,is.na(joined_dataset_final$acousticness))
+joined_dataset_final$Title <- str_to_title(joined_dataset_final$Title,"word")
+joined_dataset_final$popularity <- NULL
 
+joined_dataset_final <- joined_dataset_final %>%
+  mutate(`British charts` = ifelse(trimws(Date) != "/", "Yes", "No"))
+joined_dataset_final$`British charts` <- as.factor(joined_dataset_final$`British charts`)
+
+joined_dataset_final <- joined_dataset_final %>%
+  relocate(`British charts`, .before = Date)
 
 write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
+#write.csv(joined_dataset_final, file = "stones2.csv", row.names = F)
+
+rm(list = ls()[!ls() %in% "joined_dataset_final"])
+
