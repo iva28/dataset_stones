@@ -490,6 +490,7 @@ url_album_dirty <- "https://www.allmusic.com/album/dirty-work-mw0000191517"
 html_album_dirty <- read_html(url_album_dirty)
 album_dirty<-  html_table(html_album_dirty, fill = TRUE)[[1]]
 
+
 #brišemo prvu kolonu
 album_dirty <- album_dirty[-1]
 #brišemo poslednju kolonu
@@ -518,7 +519,7 @@ composers <- c(composers,"Earl Nelson","Lindon Roberts")
 for (composer in composers) {
   album_dirty$Title <- gsub(composer, "", album_dirty$Title)
 }
-
+album_dirty$Title[11] <-  "Key to The Highway"
 pesme <- album_dirty$`Title`
 #petlja koja prolazi kroz sve pesme iz albuma Dirty Work i dodaje duzinu trajanja pesama i njihov broj na albumu u data frame table
 for (i in 1:length(pesme)) {
@@ -1713,6 +1714,46 @@ remove(url_album_chronicals)
 remove(html_album_chronicals)
 remove(album_chronicals)
 #################################################
+##########################################################################
+#učitavamo album Love you Live
+url_album_lovelive<- "https://www.discogs.com/master/53009-The-Rolling-Stones-Love-You-Live"
+html_album_lovelive<- read_html(url_album_lovelive)
+album_lovelive<-  html_album_lovelive %>% html_nodes(xpath = "/html/body/div/div/div/div[2]/div/div[3]/section/div/table") %>% html_table(fill = TRUE) %>% .[[1]]
+
+#brišemo prvu kolonu
+album_lovelive <- album_lovelive[12:19,-c(1:2)]
+#preimenujemo sada prvu kolonu u Track number
+colnames(album_lovelive)[1] <- "Title"
+colnames(album_lovelive)[2] <- "Song duration"
+#proveravamo sve Na vrednosti
+album_lovelive[album_lovelive == ""] <- NA
+
+
+#sredjujemo kolonu Title u album_onlyroll
+#zamena višestrukih razmaka jednim razmakom
+album_lovelive$Title <- gsub("\\s+", " ",album_lovelive$Title)
+#uklanjanje znakova novog reda
+album_lovelive$Title <- gsub("\n", "", album_lovelive$Title) 
+
+#uklanjamo Composer vrednosti iz kolone Title
+album_lovelive$"Title" <- gsub("/.*", "", album_lovelive$"Title")
+
+for (composer in composers) {
+  album_lovelive$Title <- gsub(composer, "", album_lovelive$Title)
+}
+
+pesme <- album_lovelive$`Title`
+#petlja koja prolazi kroz sve pesme iz albuma Rolling Stones Chronicles i dodaje duzinu trajanja pesama i njihov broj na albumu u data frame table
+for (i in 1:length(pesme)) {
+  indeks <- which(grepl(tolower(gsub("\\s+", "", pesme[i])), tolower(gsub("\\s+\\(live\\)|\\s+", "", table$Title))))
+  table[indeks,]$`Track number` <- i
+  table[indeks,]$`Song duration` <- album_lovelive[i, ]$`Song duration`
+  table[indeks,]$`Album name` <- "Love You Live"
+}
+remove(url_album_lovelive)
+remove(html_album_lovelive)
+remove(album_lovelive)
+#################################################
 #brisemo album GRR! 
 table <- subset(table, !(table$`Album name` %in% c("GRRR! (Super Deluxe)", "GRRR!","Through the Past, Darkly (Big Hits Vol. 2)")))
 ################################################################################
@@ -2155,8 +2196,52 @@ joined_dataset_final$`British charts` <- as.factor(joined_dataset_final$`British
 joined_dataset_final <- joined_dataset_final %>%
   relocate(`British charts`, .before = Date)
 
+joined_dataset_final[is.na(joined_dataset_final$acousticness),1]
+
+names(joined_dataset_final) <- sub("\\[.*\\]", "", names(joined_dataset_final))
+joined_dataset_final$duration_ms <- NULL
+
 write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
 #write.csv(joined_dataset_final, file = "stones2.csv", row.names = F)
 
 rm(list = ls()[!ls() %in% "joined_dataset_final"])
+
+#opis kolona dataseta pesama The Rolling Stones-a 
+#
+#Title - ime 
+#Year Recorded - godina snimanja 
+#Year Released - godina kada je izdata
+#Album name - ime albuma na kojem se nalazi 
+#Record Label - ime izdavačke kuće
+#Album type - tip albuma (studijski, live verzija..)
+#Track number - redni broj na albumu
+#Song duration - Dužina trajanja 
+#Songwriter(s) - tekstopisac
+#Lead vocal(s) - vodeći vokal
+#acousticness - akustika
+#danceability - plesljivost
+#energy - energija
+#instrumentalness - instrumentalnost
+#liveness - osećaj živosti i autentičnosti
+#loudness - glasnost
+#speechiness - usmerenost na govorni jezik 
+#tempo - tempo
+#valence - emociona priroda
+#British charts - da li je bila na britanskim listama
+#Date - ako je bila na britanskim listama, datum
+#Peak Pos - ako je bila na britanskim listama, najviša pozicija
+#WoC - ako je bila na britanskim listama, broj nedelja na njoj
+#WksNo 1 - ako je bila na britanskim listama, broj nedelja koliko je bila na 1. poziciji
+#US Cash - pozicija na CashBox-u
+#US Rec World - pozicija na Record Word-u
+#AUS - pozicija na Kent Music Report-u u Australiji
+#UK - pozicija na UK Singles Chart-u
+#US - pozicija na Bilboard Hot 100
+#GER - pozicija na GfK Entertainment charts-u u Nemačkoj
+#NLD - pozicija na Dutch Single Top 100-u u Holandiji
+#FRA - pozicija na SNEP-u u Francuskoj
+#SWI - pozicija na Swiss Hitparade-u
+#CAN - pozicija na Canadian Singles Chart-u u Kanadi           
+#POL - pozicija na Polish music charts-u u Poljskoj
+#Certification - nagrade koje je osvojila   
 
