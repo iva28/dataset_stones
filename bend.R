@@ -1922,7 +1922,7 @@ diffPrint(str_to_lower(df_peak[19,]$Title),str_to_lower(joined_dataset[18,]$Titl
 joined_dataset_final <- left_join(joined_dataset, df_peak, by = "Title")
 
 # Zamena NA vrednosti u poslednje 4 kolone sa /
-joined_dataset_final[, (ncol(joined_dataset_final)-3):ncol(joined_dataset_final)] <- apply(joined_dataset_final[, (ncol(joined_dataset_final)-3):ncol(joined_dataset_final)], 2, function(x) ifelse(is.na(x), "/ ", x))
+joined_dataset_final[, (ncol(joined_dataset_final)-3):ncol(joined_dataset_final)] <- apply(joined_dataset_final[, (ncol(joined_dataset_final)-3):ncol(joined_dataset_final)], 2, function(x) ifelse(is.na(x), "—", x))
 
 #pesme na chart-ovima 1963-1979
 url_charts  <- "https://en.wikipedia.org/wiki/The_Rolling_Stones_discography#Singles"
@@ -2198,10 +2198,14 @@ joined_dataset_final <- joined_dataset_final %>%
 
 names(joined_dataset_final) <- sub("\\[.*\\]", "", names(joined_dataset_final))
 joined_dataset_final$duration_ms <- NULL
+#brisemo Uk kolonu jer je ista kao Peak Pos i odnosi se na poziciju numere na Uk Singles Chart-u
+joined_dataset_final$UK <- NULL
+#rename Peak Pos kolonu
+joined_dataset_final <- joined_dataset_final %>% rename(`UK Peak Pos` = `Peak  Pos`)
 
 write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
-#write.csv(joined_dataset_final, file = "stones2.csv", row.names = F)
 
+joined_dataset_final$`Year Released` <- as.integer(joined_dataset_final$`Year Released`)
 rm(list = ls()[!ls() %in% "joined_dataset_final"])
 
 #opis kolona dataseta pesama The Rolling Stones-a 
@@ -2227,13 +2231,12 @@ rm(list = ls()[!ls() %in% "joined_dataset_final"])
 #valence - emociona priroda
 #British charts - da li je bila na britanskim listama
 #Date - ako je bila na britanskim listama, datum
-#Peak Pos - ako je bila na britanskim listama, najviša pozicija
+#UK Peak Pos - ako je bila na britanskim listama, najviša pozicija
 #WoC - ako je bila na britanskim listama, broj nedelja na njoj
 #WksNo 1 - ako je bila na britanskim listama, broj nedelja koliko je bila na 1. poziciji
 #US Cash - pozicija na CashBox-u
 #US Rec World - pozicija na Record Word-u
 #AUS - pozicija na Kent Music Report-u u Australiji
-#UK - pozicija na UK Singles Chart-u
 #US - pozicija na Bilboard Hot 100
 #GER - pozicija na GfK Entertainment charts-u u Nemačkoj
 #NLD - pozicija na Dutch Single Top 100-u u Holandiji
