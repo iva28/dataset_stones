@@ -2203,9 +2203,15 @@ joined_dataset_final$UK <- NULL
 #rename Peak Pos kolonu
 joined_dataset_final <- joined_dataset_final %>% rename(`UK Peak Pos` = `Peak  Pos`)
 
+#zamena "—"
+joined_dataset_final[, 21:35] <- lapply(joined_dataset_final[, 21:35], function(x) gsub("—", "-", x))
+joined_dataset_final$`Year Released` <- as.integer(joined_dataset_final$`Year Released`)
+#sredjivanje poslednje kolone
+joined_dataset_final$Certification <- gsub("\n", ", ", joined_dataset_final$Certification)
+
+
 write.csv(joined_dataset_final, file = "stones.csv", row.names = F)
 
-joined_dataset_final$`Year Released` <- as.integer(joined_dataset_final$`Year Released`)
 rm(list = ls()[!ls() %in% "joined_dataset_final"])
 
 #opis kolona dataseta pesama The Rolling Stones-a 
